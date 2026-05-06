@@ -96,5 +96,43 @@ test('document becomes available once publish_at is reached (utc)', function () 
     assert_true($row['publish_at'] <= $now_utc, 'document should be available once publish_at is reached');
 });
 
+test('slug is generated and stored on document creation', function () {
+    $slug = generate_slug('Test Document');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Test Document', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $stmt = db()->prepare('SELECT slug FROM documents WHERE id = ?');
+    $stmt->execute([$docId]);
+    $row = $stmt->fetch();
+    assert_true($row['slug'] === $slug, 'slug not stored correctly');
+    assert_true(str_starts_with($row['slug'], 'test-document-'), 'slug should be derived from title');
+});
+
+test('slug is unique across documents with the same title', function () {
+    $slug1 = generate_slug('Duplicate Title');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Duplicate Title', 'body', $slug1]);
+
+    $slug2 = generate_slug('Duplicate Title');
+    $stmt->execute(['Duplicate Title', 'body', $slug2]);
+
+    assert_true($slug1 !== $slug2, 'slugs for same title should differ due to random suffix');
+});
+
+test('slug lookup resolves correct document via share', function () {
+    $slug = generate_slug('Slug Lookup Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Slug Lookup Doc', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $stmt = db()->prepare('SELECT id, title FROM documents WHERE slug = ?');
+    $stmt->execute([$slug]);
+    $row = $stmt->fetch();
+    assert_true($row !== false, 'slug should resolve to a document');
+    assert_true((int) $row['id'] === $docId, 'slug resolved to wrong document');
+    assert_true($row['title'] === 'Slug Lookup Doc', 'unexpected title for slug');
+});
+
 echo "\n{$pass} passed, {$fail} failed.\n";
 exit($fail > 0 ? 1 : 0);

@@ -49,7 +49,7 @@ render_header($doc['title']);
 ?>
 
 <h1 class="page-title"><?= h($doc['title']) ?></h1>
-<p class="meta">Shared with <?= h($doc['recipient_email']) ?></p>
+<p class="meta">Shared with <?= h($doc['recipient_email']) ?><?= ($doc['slug'] ?? '') ? ' · <code>' . h($doc['slug']) . '</code>' : '' ?></p>
 
 <pre class="doc-body"><?= h($doc['body']) ?></pre>
 
