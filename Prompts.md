@@ -35,7 +35,7 @@
 
 - Give me a migration plan for adding short, human readable ids as an option for publishing a document.
     1. Slug from title + short random suffix — e.g. welcome-packet-4k2x. Derive from title at creation time (lowercase, hyphenate, strip special chars), append a 4-char random alphanumeric to avoid collisions. Stored in a slug column with a unique index. Natural, readable, memorable.
-			- Best option for user interaction as this is its intended purpose.  Title means something and sulg can be treated as the unique document.
+			- Best option for user interaction as this is its intended purpose.  Title means something and slug can be treated as the unique document.
 	2. Adjective-noun-number — e.g. swift-river-42. Fully generated, never derived from content. No collision with title changes. Less descriptive but always safe and speakable.
 	3. Prefixed random ID — e.g. FOLIO-7QX4. Short, brand-consistent, easy to say aloud. Not human-meaningful but recognizable as a Folio ID. Simple to generate and guaranteed collision-resistant at scale.
 	4. Sequential slug — e.g. welcome-packet, welcome-packet-2. Derived from title, no random suffix. Cleanest URLs but requires a uniqueness check loop and breaks if titles change.
