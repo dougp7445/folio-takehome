@@ -46,8 +46,9 @@ test('seeded share link resolves to the seeded document', function () {
 
 test('document with future publish_at is not yet available', function () {
     $future = (new DateTime('+1 hour', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Scheduled Doc', 'body', $future]);
+    $slug = generate_slug('Scheduled Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Scheduled Doc', 'body', $future, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -60,8 +61,9 @@ test('document with future publish_at is not yet available', function () {
 
 test('document with past publish_at is available', function () {
     $past = (new DateTime('-1 hour', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Past Scheduled Doc', 'body', $past]);
+    $slug = generate_slug('Past Scheduled Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Past Scheduled Doc', 'body', $past, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -72,8 +74,9 @@ test('document with past publish_at is available', function () {
 });
 
 test('document with null publish_at is immediately available', function () {
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, NULL)');
-    $stmt->execute(['No Schedule Doc', 'body']);
+    $slug = generate_slug('No Schedule Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, NULL, ?)');
+    $stmt->execute(['No Schedule Doc', 'body', $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -85,15 +88,65 @@ test('document with null publish_at is immediately available', function () {
 test('document becomes available once publish_at is reached (utc)', function () {
     $now_utc = (new DateTime('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
     $just_passed = (new DateTime('-1 second', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Just Published Doc', 'body', $just_passed]);
+    $slug = generate_slug('Just Published Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Just Published Doc', 'body', $just_passed, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
     $stmt->execute([$docId]);
     $row = $stmt->fetch();
     assert_true($row['publish_at'] <= $now_utc, 'document should be available once publish_at is reached');
+});
+
+test('slug is generated and stored on document creation', function () {
+    $slug = generate_slug('Test Document');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Test Document', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $stmt = db()->prepare('SELECT slug FROM documents WHERE id = ?');
+    $stmt->execute([$docId]);
+    $row = $stmt->fetch();
+    assert_true($row['slug'] === $slug, 'slug not stored correctly');
+    assert_true(str_starts_with($row['slug'], 'test-document-'), 'slug should be derived from title');
+});
+
+test('slug is unique across documents with the same title', function () {
+    $slug1 = generate_slug('Duplicate Title');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Duplicate Title', 'body', $slug1]);
+
+    $slug2 = generate_slug('Duplicate Title');
+    $stmt->execute(['Duplicate Title', 'body', $slug2]);
+
+    assert_true($slug1 !== $slug2, 'slugs for same title should differ due to random suffix');
+});
+
+test('slug lookup resolves correct document via share', function () {
+    $slug = generate_slug('Slug Lookup Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Slug Lookup Doc', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $stmt = db()->prepare('SELECT id, title FROM documents WHERE slug = ?');
+    $stmt->execute([$slug]);
+    $row = $stmt->fetch();
+    assert_true($row !== false, 'slug should resolve to a document');
+    assert_true((int) $row['id'] === $docId, 'slug resolved to wrong document');
+    assert_true($row['title'] === 'Slug Lookup Doc', 'unexpected title for slug');
+});
+
+test('document creation without a slug is rejected', function () {
+    $threw = false;
+    try {
+        $stmt = db()->prepare('INSERT INTO documents (title, body, created_by) VALUES (?, ?, 1)');
+        $stmt->execute(['No Slug Doc', 'body']);
+    } catch (PDOException $e) {
+        $threw = true;
+        assert_true(str_contains($e->getMessage(), 'slug is required'), 'unexpected error: ' . $e->getMessage());
+    }
+    assert_true($threw, 'expected insert without slug to throw');
 });
 
 echo "\n{$pass} passed, {$fail} failed.\n";

@@ -1,0 +1,32 @@
+Human Readable Ids:
+	Asked for migration plan for short human readable ids
+		1. Slug from title + short random suffix — e.g. welcome-packet-4k2x. Derive from title at creation time (lowercase, hyphenate, strip special chars), append a 4-char random alphanumeric to avoid collisions. Stored in a slug column with a unique index. Natural, readable, memorable.
+			- Best option for user interaction as this is its intended purpose.  Title means something and sulg can be treated as the unique document.
+		2. Adjective-noun-number — e.g. swift-river-42. Fully generated, never derived from content. No collision with title changes. Less descriptive but always safe and speakable.
+			- While readable, does not provide context.  If this was internal only i.e. project names, this would be alright but with my decision to have the recipients get the slug as well, could lead to confusion.
+		3. Prefixed random ID — e.g. FOLIO-7QX4. Short, brand-consistent, easy to say aloud. Not human-meaningful but recognizable as a Folio ID. Simple to generate and guaranteed collision-resistant at scale.
+			- If dealing with documents not generated internally, I would combine this with option one to show the source of the document.
+		4. Sequential slug — e.g. welcome-packet, welcome-packet-2. Derived from title, no random suffix. Cleanest URLs but requires a uniqueness check loop and breaks if titles change.
+			- Not a fan of this sort of format.  Its basic but title changes could lead to issues.  However, I do acknowledge due to decision to not let use update slug (see below), the concern brought up is not an issue.
+		Key decisions to nail down before building:
+			- Does the slug appear in the URL for staff (admin) or recipients (view)?
+				Slug should appear for both staff and recipients.  This ensures that they are referencing the same document as multiple versions could be available.
+			- Can slugs be edited after creation, or are they permanent?
+				Do not allow them to be edited.  With staff and recipients both getting the slugs, a change can lead to confusion as the recipients slug does not match the staff.  However, this decision would be run by the customer with the explanation of why currently not allow editing.  Customer may want to do this for versioning of documents.
+			- Does it replace or complement the existing ?token= share link?
+				For now, having it complement.  This is because you can create multiple share links per document.
+					Changing this for the share token to be a combination of the slug and randomized instead of having both.
+	Asked to implement.
+		Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1 Cannot add a UNIQUE column in /app/seed.php:14
+		Stack trace:
+			#0 /app/seed.php(14): PDO->exec('ALTER TABLE doc...')
+			#1 {main}
+			thrown in /app/seed.php on line 14
+			exited with code 255
+		Issue was SQLite did not support original migration plan.  Showing error to Claude had it resolve the issue.
+	Pushed up for review of current changes.
+	Update tests to not skip slug.
+	Do not allow new document creation without slug.
+		- SQLite does allow NOT NULL without a default (from Claude), so migration was updated to not allow new document without a slug.
+		- Did not add backfill for documents without a slug for now.  Reasoning is if there are thousands of documents, this could take some time and lead to downtime.  In a production scenario, would of designated a time when users are most likely not using system to backfill those slugs.
+	Pushed up for review	

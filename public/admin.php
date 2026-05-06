@@ -22,14 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($title === '' || $body === '') {
         $error = 'Title and body are required.';
     } else {
+        $slug = generate_slug($title);
         $stmt = db()->prepare('
-            INSERT INTO documents (title, body, created_by, publish_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO documents (title, body, created_by, publish_at, slug)
+            VALUES (?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$title, $body, $staff['id'], $publish_at]);
+        $stmt->execute([$title, $body, $staff['id'], $publish_at, $slug]);
         $docId = (int) db()->lastInsertId();
 
-        audit_log('create', 'document', $docId, ['title' => $title, 'publish_at' => $publish_at]);
+        audit_log('create', 'document', $docId, ['title' => $title, 'publish_at' => $publish_at, 'slug' => $slug]);
 
         header('Location: /admin.php?created=' . $docId);
         exit;
@@ -86,6 +87,7 @@ render_header('Admin', $staff);
                 <tr>
                     <th>ID</th>
                     <th>Title</th>
+                    <th>Slug</th>
                     <th>Creator</th>
                     <th>Created</th>
                     <th>Publishes at</th>
@@ -97,6 +99,7 @@ render_header('Admin', $staff);
                     <tr>
                         <td class="id">#<?= (int) $d['id'] ?></td>
                         <td><?= h($d['title']) ?></td>
+                        <td><code><?= h($d['slug'] ?? '') ?></code></td>
                         <td><?= h($d['creator_name']) ?></td>
                         <td><?= h($d['created_at']) ?></td>
                         <?php
