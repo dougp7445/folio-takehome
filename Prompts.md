@@ -30,3 +30,19 @@
 - When document is not available yet, display in local time when it will be available.
 - Update tests with UTC time change
 - Update Prompts.md with prompts used this session. Low effort.
+
+## Human-Readable Document IDs (Slugs)
+
+- Give me a migration plan for adding short, human readable ids as an option for publishing a document.
+    1. Slug from title + short random suffix — e.g. welcome-packet-4k2x. Derive from title at creation time (lowercase, hyphenate, strip special chars), append a 4-char random alphanumeric to avoid collisions. Stored in a slug column with a unique index. Natural, readable, memorable.
+			- Best option for user interaction as this is its intended purpose.  Title means something and sulg can be treated as the unique document.
+	2. Adjective-noun-number — e.g. swift-river-42. Fully generated, never derived from content. No collision with title changes. Less descriptive but always safe and speakable.
+	3. Prefixed random ID — e.g. FOLIO-7QX4. Short, brand-consistent, easy to say aloud. Not human-meaningful but recognizable as a Folio ID. Simple to generate and guaranteed collision-resistant at scale.
+	4. Sequential slug — e.g. welcome-packet, welcome-packet-2. Derived from title, no random suffix. Cleanest URLs but requires a uniqueness check loop and breaks if titles change.
+- Slug appear for both staff and recipients. Slugs cannot be edited after creation. Complements existing share link.
+    - This is from what Claude presented as angles to consider for this change.
+- Implement option 1 for the migration.
+- app-1 | Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1 Cannot add a UNIQUE column in /app/seed.php:14
+- Do not skip slug generation in publish_at tests
+- Do not allow new document creation without a slug
+- Update Prompts.md with prompts used this session. Low effort.
