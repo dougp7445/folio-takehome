@@ -27,6 +27,24 @@ if (!$doc) {
     exit;
 }
 
+$now_utc = (new DateTime('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+if ($doc['publish_at'] !== null && $doc['publish_at'] > $now_utc) {
+    http_response_code(403);
+    render_header('Not yet available');
+    ?>
+    <div class="centered-message">
+        <h1>Not yet available</h1>
+        <p>This document will be available on <time id="publish-time" datetime="<?= h($doc['publish_at']) ?>Z"><?= h($doc['publish_at']) ?> UTC</time>.</p>
+    </div>
+    <script>
+        const el = document.getElementById('publish-time');
+        el.textContent = new Date(el.dateTime).toLocaleString();
+    </script>
+    <?php
+    render_footer();
+    exit;
+}
+
 render_header($doc['title']);
 ?>
 
