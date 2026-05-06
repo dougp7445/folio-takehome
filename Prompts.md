@@ -50,5 +50,33 @@
 ## Search by Title
 
 - Give me some options for a user searching by the title of the document with upsides and downsides. Take search time into consideration. Low effort.
+  1. Exact match
+		WHERE title = ?
+		Fast (uses index if one exists), zero ambiguity
+		Useless in practice — staff must remember the exact title including capitalization
+
+	2. Prefix match
+		WHERE title LIKE 'onboarding%'
+		Fast with an index on title, natural to type
+		Misses mid-word matches ("packet" won't find "Welcome Packet")
+
+	3. Substring match
+		WHERE title LIKE '%onboarding%'
+
+		Flexible, finds partial matches anywhere in the title
+		Full table scan every time — SQLite can't use a B-tree index for leading wildcards. Fine at small scale (dozens of docs), degrades linearly as the table grows
+
+	4. SQLite FTS5 (full-text search)
+		CREATE VIRTUAL TABLE documents_fts USING fts5(title) + WHERE documents_fts MATCH ?
+		Fast even on large datasets (inverted index), supports stemming/prefix natively
+		Extra table to maintain, more migration complexity, slight overkill for an internal tool with low document counts
+
+	5. Application-side fuzzy match
+		Load all titles into PHP, score them with something like Levenshtein distance
+		Tolerates typos ("onbording" finds "Onboarding")
+		Loads entire title list into memory on every search; only viable if the document count stays small
+
 - Can option 4 and option 5 be combined? Low effort
 - Update Prompts.md with prompts. Low effort.
+- Add tests for searching that include partial titles and mispelled searchs.
+- Would indexing the database help with being to implement Levenshtein?
