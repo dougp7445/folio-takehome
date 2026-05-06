@@ -149,5 +149,67 @@ test('document creation without a slug is rejected', function () {
     assert_true($threw, 'expected insert without slug to throw');
 });
 
+test('fts5 search finds document by title keyword', function () {
+    $slug = generate_slug('Onboarding Handbook');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Onboarding Handbook', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $fts_query = '"onboarding"*';
+    $stmt = db()->prepare('SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?');
+    $stmt->execute([$fts_query]);
+    $ids = array_column($stmt->fetchAll(), 'rowid');
+    assert_true(in_array($docId, $ids), 'fts5 should find document by title keyword');
+});
+
+test('fts5 search returns no results for unmatched query', function () {
+    $fts_query = '"zzznomatch"*';
+    $stmt = db()->prepare('SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?');
+    $stmt->execute([$fts_query]);
+    $rows = $stmt->fetchAll();
+    assert_true(empty($rows), 'expected no results for unmatched query');
+});
+
+test('fts5 search finds document by partial title prefix (onboard -> Onboarding)', function () {
+    $slug = generate_slug('Onboarding Guide');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Onboarding Guide', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    $fts_query = '"onboard"*';
+    $stmt = db()->prepare('SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?');
+    $stmt->execute([$fts_query]);
+    $ids = array_column($stmt->fetchAll(), 'rowid');
+    assert_true(in_array($docId, $ids), 'fts5 should match partial prefix onboard -> Onboarding');
+});
+
+test('fts5 search does not find document by mid-word partial (board does not match Onboarding)', function () {
+    $slug = generate_slug('Onboarding Packet');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Onboarding Packet', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    // FTS5 tokenises by word boundary — "board" is not a token prefix of "onboarding"
+    $fts_query = '"board"*';
+    $stmt = db()->prepare('SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?');
+    $stmt->execute([$fts_query]);
+    $ids = array_column($stmt->fetchAll(), 'rowid');
+    assert_true(!in_array($docId, $ids), 'fts5 does not support mid-word partial matching');
+});
+
+test('fts5 search does not find document for misspelled title (onbording does not match Onboarding)', function () {
+    $slug = generate_slug('Onboarding Reference');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, slug) VALUES (?, ?, 1, ?)');
+    $stmt->execute(['Onboarding Reference', 'body', $slug]);
+    $docId = (int) db()->lastInsertId();
+
+    // FTS5 has no fuzzy/Levenshtein matching — misspellings return no results
+    $fts_query = '"onbording"*';
+    $stmt = db()->prepare('SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?');
+    $stmt->execute([$fts_query]);
+    $ids = array_column($stmt->fetchAll(), 'rowid');
+    assert_true(!in_array($docId, $ids), 'fts5 does not support misspelling/fuzzy matching');
+});
+
 echo "\n{$pass} passed, {$fail} failed.\n";
 exit($fail > 0 ? 1 : 0);
