@@ -46,3 +46,9 @@
 - Do not skip slug generation in publish_at tests
 - Do not allow new document creation without a slug
 - Update Prompts.md with prompts used this session. Low effort.
+
+## Search by Title
+
+- Give me some options for a user searching by the title of the document with upsides and downsides. Take search time into consideration. Low effort.
+- Can option 4 and option 5 be combined? Low effort
+- Update Prompts.md with prompts. Low effort.

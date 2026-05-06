@@ -1,0 +1,44 @@
+Searchable Titles:
+	Asked for options for searching by title.
+		1. Exact match
+			WHERE title = ?
+			Fast (uses index if one exists), zero ambiguity
+			Useless in practice — staff must remember the exact title including capitalization
+
+		- Having to get the exact title is annoying and tedious for users.  Not using this.
+
+		2. Prefix match
+			WHERE title LIKE 'onboarding%'
+
+			Fast with an index on title, natural to type
+			Misses mid-word matches ("packet" won't find "Welcome Packet")
+
+		- Missing what a user would think to be an obvious match would lead to frustrations.  Not using this.
+
+		3. Substring match
+			WHERE title LIKE '%onboarding%'
+
+			Flexible, finds partial matches anywhere in the title
+			Full table scan every time — SQLite can't use a B-tree index for leading wildcards. Fine at small scale (dozens of docs), degrades linearly as the table grows
+
+		- Full scan everytime is very time consuming and slow and does not scale.  Not using this.
+
+		4. SQLite FTS5 (full-text search)
+			CREATE VIRTUAL TABLE documents_fts USING fts5(title) + WHERE documents_fts MATCH ?
+
+			Fast even on large datasets (inverted index), supports stemming/prefix natively
+			Extra table to maintain, more migration complexity, slight overkill for an internal tool with low document counts
+
+		- While having to maintaing another table is not ideal, allows for fast searching and some level of deciphiring partial names.  Best option for search.
+
+		5. Application-side fuzzy match
+			Load all titles into PHP, score them with something like Levenshtein distance
+
+			Tolerates typos ("onbording" finds "Onboarding")
+			Loads entire title list into memory on every search; only viable if the document count stays small
+		
+		- Ideal for searching, but loading all titles will not scale and will go to a crawl.  Going to see if this can be combined with SQLite FTS5
+
+	Asked if options 4 and 5 could be combined for searching by title.
+
+		- Returned that they could be combined but unnecessary for current scenario in terms of complexity.  Most telling issue is if FTS5 finds nothing the fuzzy matching has nothing to work with.  Going with option 4 for now and may come back to working 5 in if I have time.
