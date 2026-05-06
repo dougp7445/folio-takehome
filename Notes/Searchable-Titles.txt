@@ -50,6 +50,8 @@ Searchable Titles:
 	Adding additional tests
 		- Needed tests for partial findings and mispellings.  Mispellings and midword are expected to fail due to no fuzzy matching.
 
-	Running out of time.  Notes of what I would of liked to have done:
+	Asked about adding indexing
+		- Would not help for fuzzy searching
 
+	Running out of time.  Notes of what I would of liked to have done:
 		- Try out fuzzy matching and include a time out for it if possible.  Also, wildcards.
