@@ -12,7 +12,7 @@ Human Readable Ids:
 			- Does the slug appear in the URL for staff (admin) or recipients (view)?
 				Slug should appear for both staff and recipients.  This ensures that they are referencing the same document as multiple versions could be available.
 			- Can slugs be edited after creation, or are they permanent?
-				Do not allow them to be edited.  With staff and recipients both getting the slugs, a change can lead to confusion as the recipients slug does not match the staff.
+				Do not allow them to be edited.  With staff and recipients both getting the slugs, a change can lead to confusion as the recipients slug does not match the staff.  However, this decision would be run by the customer with the explanation of why currently not allow editing.  Customer may want to do this for versioning of documents.
 			- Does it replace or complement the existing ?token= share link?
 				For now, having it complement.  This is because you can create multiple share links per document.
 					Changing this for the share token to be a combination of the slug and randomized instead of having both.
