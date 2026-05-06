@@ -42,3 +42,14 @@ Searchable Titles:
 	Asked if options 4 and 5 could be combined for searching by title.
 
 		- Returned that they could be combined but unnecessary for current scenario in terms of complexity.  Most telling issue is if FTS5 finds nothing the fuzzy matching has nothing to work with.  Going with option 4 for now and may come back to working 5 in if I have time.
+	
+	Implement option 4
+		- Tests were sufficient to test UI functionality (i.e. the tests added documents I could search for in the UI)
+		- Did not add enough tests on first prompt.
+	
+	Adding additional tests
+		- Needed tests for partial findings and mispellings.  Mispellings and midword are expected to fail due to no fuzzy matching.
+
+	Running out of time.  Notes of what I would of liked to have done:
+
+		- Try out fuzzy matching and include a time out for it if possible.  Also, wildcards.
