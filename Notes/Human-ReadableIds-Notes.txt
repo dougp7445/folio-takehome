@@ -28,5 +28,5 @@ Human Readable Ids:
 	Update tests to not skip slug.
 	Do not allow new document creation without slug.
 		- SQLite does allow NOT NULL without a default (from Claude), so migration was updated to not allow new document without a slug.
-		- Did not add migration for now for if the slug doesn't exist on an existing document.  Reasoning is if there are thousands of documents, this could take some time and lead to downtime.  In a production scenario, would of designated a time when users are most likely not using system to backfill those slugs.
+		- Did not add backfill for documents without a slug for now.  Reasoning is if there are thousands of documents, this could take some time and lead to downtime.  In a production scenario, would of designated a time when users are most likely not using system to backfill those slugs.
 	Pushed up for review	
