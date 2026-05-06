@@ -11,7 +11,8 @@ Human Readable Ids:
 		- Can slugs be edited after creation, or are they permanent?
 			Do not allow them to be edited.  With staff and recipients both getting the slugs, a change can lead to confusion as the recipients slug does not match the staff.
 		- Does it replace or complement the existing ?token= share link?
-			For now, having it complement.
+			For now, having it complement.  This is because you can create multiple share links per document.
+				Changing this for the share token to be a combination of the slug and randomized instead of having both.
 	Asked to implement.
 		Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1 Cannot add a UNIQUE column in /app/seed.php:14
 		Stack trace:
@@ -20,4 +21,9 @@ Human Readable Ids:
 			thrown in /app/seed.php on line 14
 			exited with code 255
 		Issue was SQLite did not support original migration plan.  Showing error to Claude had it resolve the issue.
+	Pushed up for review of current changes.
+	Update tests to not skip slug.
+	Do not allow new document creation without slug.
+		- SQLite does allow NOT NULL without a default (from Claude), so migration was updated to not allow new document without a slug.
+		- Did not add migration for now for if the slug doesn't exist on an existing document.  Reasoning is if there are thousands of documents, this could take some time and lead to downtime.  In a production scenario, would of designated a time when users are most likely not using system to backfill those slugs.
 		

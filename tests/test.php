@@ -137,5 +137,17 @@ test('slug lookup resolves correct document via share', function () {
     assert_true($row['title'] === 'Slug Lookup Doc', 'unexpected title for slug');
 });
 
+test('document creation without a slug is rejected', function () {
+    $threw = false;
+    try {
+        $stmt = db()->prepare('INSERT INTO documents (title, body, created_by) VALUES (?, ?, 1)');
+        $stmt->execute(['No Slug Doc', 'body']);
+    } catch (PDOException $e) {
+        $threw = true;
+        assert_true(str_contains($e->getMessage(), 'slug is required'), 'unexpected error: ' . $e->getMessage());
+    }
+    assert_true($threw, 'expected insert without slug to throw');
+});
+
 echo "\n{$pass} passed, {$fail} failed.\n";
 exit($fail > 0 ? 1 : 0);
