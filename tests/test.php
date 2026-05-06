@@ -46,8 +46,9 @@ test('seeded share link resolves to the seeded document', function () {
 
 test('document with future publish_at is not yet available', function () {
     $future = (new DateTime('+1 hour', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Scheduled Doc', 'body', $future]);
+    $slug = generate_slug('Scheduled Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Scheduled Doc', 'body', $future, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -60,8 +61,9 @@ test('document with future publish_at is not yet available', function () {
 
 test('document with past publish_at is available', function () {
     $past = (new DateTime('-1 hour', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Past Scheduled Doc', 'body', $past]);
+    $slug = generate_slug('Past Scheduled Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Past Scheduled Doc', 'body', $past, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -72,8 +74,9 @@ test('document with past publish_at is available', function () {
 });
 
 test('document with null publish_at is immediately available', function () {
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, NULL)');
-    $stmt->execute(['No Schedule Doc', 'body']);
+    $slug = generate_slug('No Schedule Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, NULL, ?)');
+    $stmt->execute(['No Schedule Doc', 'body', $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
@@ -85,9 +88,9 @@ test('document with null publish_at is immediately available', function () {
 test('document becomes available once publish_at is reached (utc)', function () {
     $now_utc = (new DateTime('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
     $just_passed = (new DateTime('-1 second', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-
-    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at) VALUES (?, ?, 1, ?)');
-    $stmt->execute(['Just Published Doc', 'body', $just_passed]);
+    $slug = generate_slug('Just Published Doc');
+    $stmt = db()->prepare('INSERT INTO documents (title, body, created_by, publish_at, slug) VALUES (?, ?, 1, ?, ?)');
+    $stmt->execute(['Just Published Doc', 'body', $just_passed, $slug]);
     $docId = (int) db()->lastInsertId();
 
     $stmt = db()->prepare('SELECT publish_at FROM documents WHERE id = ?');
